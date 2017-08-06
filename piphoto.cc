@@ -192,21 +192,21 @@ class PiRaw {
   std::unique_ptr<Image<X, Y>> image_;
 };
 
-typedef PiRaw<3280,2464,10,16,2> PiRaw2;
+typedef PiRaw<3280, 2464, 10, 16, 2> PiRaw2;
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-PiRaw<X,Y,D,A,P>::PiRaw(std::unique_ptr<Image<X, Y>> image)
+PiRaw<X, Y, D, A, P>::PiRaw(std::unique_ptr<Image<X, Y>> image)
     : image_(std::move(image)) {}
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-PiRaw<X,Y,D,A,P> PiRaw<X,Y,D,A,P>::FromJpeg(const std::string_view& jpeg) {
+PiRaw<X, Y, D, A, P> PiRaw<X, Y, D, A, P>::FromJpeg(const std::string_view& jpeg) {
   auto container_len = GetRawBytes() + kJpegHeaderBytes;
   assert(jpeg.substr(jpeg.size() - container_len, 4) == kJpegHeaderMagic);
   return FromRaw(jpeg.substr(jpeg.size() - GetRawBytes(), GetRawBytes()));
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-PiRaw<X,Y,D,A,P> PiRaw<X,Y,D,A,P>::FromRaw(const std::string_view& raw) {
+PiRaw<X, Y, D, A, P> PiRaw<X, Y, D, A, P>::FromRaw(const std::string_view& raw) {
   static_assert(X % 2 == 0);
   static_assert(Y % 2 == 0);
   static_assert(kPixelsPerChunk == 4);
@@ -223,36 +223,36 @@ PiRaw<X,Y,D,A,P> PiRaw<X,Y,D,A,P>::FromRaw(const std::string_view& raw) {
       image->at(out_y).at(out_x + 1) = CombineRaw(chunk1.at(2), chunk1.at(3), chunk2.at(2), chunk2.at(3));
     }
   }
-  return PiRaw<X,Y,D,A,P>(std::move(image));
+  return PiRaw<X, Y, D, A, P>(std::move(image));
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X,Y,D,A,P>::GetRawBytes() {
+constexpr uint32_t PiRaw<X, Y, D, A, P>::GetRawBytes() {
   return GetRowBytes() * GetNumRows();
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X,Y,D,A,P>::GetRowBytes() {
+constexpr uint32_t PiRaw<X, Y, D, A, P>::GetRowBytes() {
   return Align(Align(X + P) * D / kBitsPerByte);
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X,Y,D,A,P>::GetNumRows() {
+constexpr uint32_t PiRaw<X, Y, D, A, P>::GetNumRows() {
   return Align(Y + P);
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X,Y,D,A,P>::GetChunkBytes() {
+constexpr uint32_t PiRaw<X, Y, D, A, P>::GetChunkBytes() {
   return D * kPixelsPerChunk / kBitsPerByte;
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X,Y,D,A,P>::Align(uint32_t val) {
+constexpr uint32_t PiRaw<X, Y, D, A, P>::Align(uint32_t val) {
   return (~(A - 1)) & ((val) + (A - 1));
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename PiRaw<X,Y,D,A,P>::Chunk PiRaw<X,Y,D,A,P>::GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y) {
+typename PiRaw<X, Y, D, A, P>::Chunk PiRaw<X, Y, D, A, P>::GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y) {
   // Function is bit depth & layout specific
   static_assert(D == 10);
 
@@ -272,7 +272,7 @@ typename PiRaw<X,Y,D,A,P>::Chunk PiRaw<X,Y,D,A,P>::GetChunk(const std::string_vi
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-Color PiRaw<X,Y,D,A,P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
+Color PiRaw<X, Y, D, A, P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
   // Function is bit layout specific
   Color ret;
   ret.r = y1x1;
@@ -287,7 +287,7 @@ static void WriteCallback(png_structp png_ptr, png_bytep data, png_size_t length
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-std::string PiRaw<X,Y,D,A,P>::ToPng() {
+std::string PiRaw<X, Y, D, A, P>::ToPng() {
   std::string ret;
 
   auto png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -319,12 +319,12 @@ std::string PiRaw<X,Y,D,A,P>::ToPng() {
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-Image<X, Y>* PiRaw<X,Y,D,A,P>::GetImage() {
+Image<X, Y>* PiRaw<X, Y, D, A, P>::GetImage() {
   return image_.get();
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-const Image<X, Y>& PiRaw<X,Y,D,A,P>::GetImage() const {
+const Image<X, Y>& PiRaw<X, Y, D, A, P>::GetImage() const {
   return *image_;
 }
 
