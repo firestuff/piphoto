@@ -18,22 +18,106 @@ using string_view = experimental::string_view;
 std::string ReadFile(const std::string& filename);
 void WriteFile(const std::string& filename, const std::string& contents);
 
+
+struct Pixel {
+  // 32-bit for compiler convenience, but values are 16-bit
+  uint32_t r;
+  uint32_t g;
+  uint32_t b;
+
+  uint32_t Difference(const Pixel& other) const;
+};
+
+uint32_t Pixel::Difference(const Pixel& other) const {
+  return (
+    ((r > other.r) ? (r - other.r) : (other.r - r)) +
+    ((g > other.g) ? (g - other.g) : (other.g - g)) +
+    ((b > other.b) ? (b - other.b) : (other.b - b))
+  );
+}
+
+
+constexpr uint32_t kNumColorChecker = 24;
+constexpr std::array<Pixel, kNumColorChecker> kColorCheckerSrgb = {{
+  {0x7300, 0x5200, 0x4400},
+  {0xc200, 0x9600, 0x8200},
+  {0x6200, 0x7a00, 0x9d00},
+  {0x5700, 0x6c00, 0x4300},
+  {0x8500, 0x8000, 0xb100},
+  {0x6700, 0xbd00, 0xaa00},
+  {0xd600, 0x7e00, 0x2c00},
+  {0x5000, 0x5b00, 0xa600},
+  {0xc100, 0x5a00, 0x6300},
+  {0x5e00, 0x3c00, 0x6c00},
+  {0x9d00, 0xbc00, 0x4000},
+  {0xe000, 0xa300, 0x2e00},
+  {0x3800, 0x3d00, 0x9600},
+  {0x4600, 0x9400, 0x4900},
+  {0xaf00, 0x3600, 0x3c00},
+  {0xe700, 0xc700, 0x1f00},
+  {0xbb00, 0x5600, 0x9500},
+  {0x0800, 0x8500, 0xa100},
+  {0xf300, 0xf300, 0xf200},
+  {0xc800, 0xc800, 0xc800},
+  {0xa000, 0xa000, 0xa000},
+  {0x7a00, 0x7a00, 0x7900},
+  {0x5500, 0x5500, 0x5500},
+  {0x3400, 0x3400, 0x3400},
+}};
+
+
+struct Coord {
+  uint32_t x;
+  uint32_t y;
+};
+
+std::ostream& operator<<(std::ostream& os, const Coord& coord);
+
+std::ostream& operator<<(std::ostream& os, const Coord& coord) {
+  return os << "(" << coord.x << ", " << coord.y << ")";
+}
+
+template <uint32_t X, uint32_t Y>
+struct Image : public std::array<std::array<Pixel, X>, Y> {
+  std::array<Coord, kNumColorChecker> ColorCheckerClosest() const;
+};
+
+template <uint32_t X, uint32_t Y>
+std::array<Coord, kNumColorChecker> Image<X, Y>::ColorCheckerClosest() const {
+  std::array<Coord, kNumColorChecker> closest;
+  std::array<uint32_t, kNumColorChecker> diff;
+  diff.fill(UINT32_MAX);
+
+  for (uint32_t y = 0; y < Y; ++y) {
+    const auto& row = this->at(y);
+
+    for (uint32_t x = 0; x < X; ++x) {
+      const auto& pixel = row.at(x);
+
+      for (uint32_t cc = 0; cc < kNumColorChecker; ++cc) {
+        auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
+        if (pixel_diff < diff.at(cc)) {
+          diff.at(cc) = pixel_diff;
+          closest.at(cc) = {x, y};
+        }
+      }
+    }
+  }
+
+  return closest;
+}
+
+
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
 class PiRaw {
  public:
-  struct Pixel {
-    // 32-bit for compiler convenience, but values are 16-bit
-    uint32_t r;
-    uint32_t g;
-    uint32_t b;
-  };
-  typedef std::array<std::array<Pixel, X>, Y> Image;
-
-  PiRaw(std::unique_ptr<Image>);
+  PiRaw(std::unique_ptr<Image<X, Y>>);
   static PiRaw FromJpeg(const std::string_view& jpeg);
   static PiRaw FromRaw(const std::string_view& raw);
 
   std::string ToPng();
+
+  const Image<X, Y>& GetImage();
 
  private:
   static constexpr uint32_t kJpegHeaderBytes = 32768;
@@ -53,13 +137,13 @@ class PiRaw {
   static Chunk GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y);
   static Pixel CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1);
 
-  std::unique_ptr<Image> image_;
+  std::unique_ptr<Image<X, Y>> image_;
 };
 
 typedef PiRaw<3280,2464,10,16,2> PiRaw2;
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-PiRaw<X,Y,D,A,P>::PiRaw(std::unique_ptr<Image> image)
+PiRaw<X,Y,D,A,P>::PiRaw(std::unique_ptr<Image<X, Y>> image)
     : image_(std::move(image)) {}
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
@@ -77,7 +161,7 @@ PiRaw<X,Y,D,A,P> PiRaw<X,Y,D,A,P>::FromRaw(const std::string_view& raw) {
 
   assert(raw.size() == GetRawBytes());
 
-  auto image = std::make_unique<Image>();
+  auto image = std::make_unique<Image<X, Y>>();
 
   for (uint32_t y = 0, out_y = 0; y < Y; y += 2, ++out_y) {
     for (uint32_t x_chunk = 0, out_x = 0; x_chunk < X / kPixelsPerChunk; ++x_chunk, out_x += kPixelsPerChunk / 2) {
@@ -136,7 +220,7 @@ typename PiRaw<X,Y,D,A,P>::Chunk PiRaw<X,Y,D,A,P>::GetChunk(const std::string_vi
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename PiRaw<X,Y,D,A,P>::Pixel PiRaw<X,Y,D,A,P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
+Pixel PiRaw<X,Y,D,A,P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
   // Function is bit layout specific
   Pixel ret;
   ret.r = y1x1;
@@ -182,6 +266,10 @@ std::string PiRaw<X,Y,D,A,P>::ToPng() {
   return ret;
 }
 
+template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
+const Image<X, Y>& PiRaw<X,Y,D,A,P>::GetImage() {
+  return *image_;
+}
 
 std::string ReadFile(const std::string& filename) {
   int fh = open(filename.c_str(), O_RDONLY);
@@ -199,7 +287,6 @@ std::string ReadFile(const std::string& filename) {
   return contents;
 }
 
-
 void WriteFile(const std::string& filename, const std::string& contents) {
   int fh = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
   assert(fh != -1);
@@ -210,5 +297,9 @@ void WriteFile(const std::string& filename, const std::string& contents) {
 
 int main() {
   auto raw = PiRaw2::FromJpeg(ReadFile("test.jpg"));
+  auto closest = raw.GetImage().ColorCheckerClosest();
+  for (uint32_t cc = 0; cc < kNumColorChecker; ++cc) {
+    std::cout << cc << ": " << closest.at(cc) << std::endl;
+  }
   WriteFile("test.png", raw.ToPng());
 }
