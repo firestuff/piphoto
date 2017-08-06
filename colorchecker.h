@@ -1,5 +1,11 @@
 #pragma once
 
+#include <array>
+
+#include "color.h"
+#include "coord.h"
+#include "image.h"
+
 constexpr std::array<Color, 24> kColorCheckerSrgb = {{
   {0x7300, 0x5200, 0x4400},
   {0xc200, 0x9600, 0x8200},
@@ -26,3 +32,28 @@ constexpr std::array<Color, 24> kColorCheckerSrgb = {{
   {0x5500, 0x5500, 0x5500},
   {0x3400, 0x3400, 0x3400},
 }};
+
+template <uint32_t X, uint32_t Y>
+std::array<Coord, kColorCheckerSrgb.size()> ColorCheckerClosest(const Image<X, Y>& image) {
+  std::array<Coord, kColorCheckerSrgb.size()> closest;
+  std::array<uint32_t, kColorCheckerSrgb.size()> diff;
+  diff.fill(UINT32_MAX);
+
+  for (uint32_t y = 0; y < Y; ++y) {
+    const auto& row = image.at(y);
+
+    for (uint32_t x = 0; x < X; ++x) {
+      const auto& pixel = row.at(x);
+
+      for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
+        auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
+        if (pixel_diff < diff.at(cc)) {
+          diff.at(cc) = pixel_diff;
+          closest.at(cc) = {x, y};
+        }
+      }
+    }
+  }
+
+  return closest;
+}

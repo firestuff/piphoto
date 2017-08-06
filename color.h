@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 struct Color {
   // 32-bit for compiler convenience, but values are 16-bit
   uint32_t r;
