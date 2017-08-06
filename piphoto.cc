@@ -11,63 +11,16 @@
 #include <iostream>
 #include <string>
 
+#include "color.h"
+#include "colorchecker.h"
+#include "colors.h"
+
 namespace std {
 using string_view = experimental::string_view;
 }
 
 std::string ReadFile(const std::string& filename);
 void WriteFile(const std::string& filename, const std::string& contents);
-
-
-struct Color {
-  // 32-bit for compiler convenience, but values are 16-bit
-  uint32_t r;
-  uint32_t g;
-  uint32_t b;
-
-  uint32_t Difference(const Color& other) const;
-};
-
-uint32_t Color::Difference(const Color& other) const {
-  return (
-    ((r > other.r) ? (r - other.r) : (other.r - r)) +
-    ((g > other.g) ? (g - other.g) : (other.g - g)) +
-    ((b > other.b) ? (b - other.b) : (other.b - b))
-  );
-}
-
-
-constexpr uint32_t kNumColorChecker = 24;
-constexpr std::array<Color, kNumColorChecker> kColorCheckerSrgb = {{
-  {0x7300, 0x5200, 0x4400},
-  {0xc200, 0x9600, 0x8200},
-  {0x6200, 0x7a00, 0x9d00},
-  {0x5700, 0x6c00, 0x4300},
-  {0x8500, 0x8000, 0xb100},
-  {0x6700, 0xbd00, 0xaa00},
-  {0xd600, 0x7e00, 0x2c00},
-  {0x5000, 0x5b00, 0xa600},
-  {0xc100, 0x5a00, 0x6300},
-  {0x5e00, 0x3c00, 0x6c00},
-  {0x9d00, 0xbc00, 0x4000},
-  {0xe000, 0xa300, 0x2e00},
-  {0x3800, 0x3d00, 0x9600},
-  {0x4600, 0x9400, 0x4900},
-  {0xaf00, 0x3600, 0x3c00},
-  {0xe700, 0xc700, 0x1f00},
-  {0xbb00, 0x5600, 0x9500},
-  {0x0800, 0x8500, 0xa100},
-  {0xf300, 0xf300, 0xf200},
-  {0xc800, 0xc800, 0xc800},
-  {0xa000, 0xa000, 0xa000},
-  {0x7a00, 0x7a00, 0x7900},
-  {0x5500, 0x5500, 0x5500},
-  {0x3400, 0x3400, 0x3400},
-}};
-
-constexpr Color kBlack = Color{0x0000, 0x0000, 0x0000};
-constexpr Color kWhite = Color{0xffff, 0xffff, 0xffff};
-
 
 struct Coord {
   uint32_t x;
@@ -83,7 +36,7 @@ std::ostream& operator<<(std::ostream& os, const Coord& coord) {
 template <uint32_t X, uint32_t Y>
 class Image : public std::array<std::array<Color, X>, Y> {
  public:
-  std::array<Coord, kNumColorChecker> ColorCheckerClosest() const;
+  std::array<Coord, kColorCheckerSrgb.size()> ColorCheckerClosest() const;
 
   Color GetPixel(const Coord& coord) const;
 
@@ -95,9 +48,9 @@ class Image : public std::array<std::array<Color, X>, Y> {
 };
 
 template <uint32_t X, uint32_t Y>
-std::array<Coord, kNumColorChecker> Image<X, Y>::ColorCheckerClosest() const {
-  std::array<Coord, kNumColorChecker> closest;
-  std::array<uint32_t, kNumColorChecker> diff;
+std::array<Coord, kColorCheckerSrgb.size()> Image<X, Y>::ColorCheckerClosest() const {
+  std::array<Coord, kColorCheckerSrgb.size()> closest;
+  std::array<uint32_t, kColorCheckerSrgb.size()> diff;
   diff.fill(UINT32_MAX);
 
   for (uint32_t y = 0; y < Y; ++y) {
@@ -106,7 +59,7 @@ std::array<Coord, kNumColorChecker> Image<X, Y>::ColorCheckerClosest() const {
     for (uint32_t x = 0; x < X; ++x) {
       const auto& pixel = row.at(x);
 
-      for (uint32_t cc = 0; cc < kNumColorChecker; ++cc) {
+      for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
         auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
         if (pixel_diff < diff.at(cc)) {
           diff.at(cc) = pixel_diff;
@@ -356,7 +309,7 @@ int main() {
   auto raw = PiRaw2::FromJpeg(ReadFile("test.jpg"));
   auto* image = raw.GetImage();
   auto closest = image->ColorCheckerClosest();
-  for (uint32_t cc = 0; cc < kNumColorChecker; ++cc) {
+  for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
     const auto& coord = closest.at(cc);
     const auto& color = kColorCheckerSrgb.at(cc);
     std::cout << cc << ": " << coord << " difference=" << color.Difference(image->GetPixel(coord)) << std::endl;
