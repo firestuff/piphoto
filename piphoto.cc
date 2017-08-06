@@ -9,8 +9,7 @@
 #include "util.h"
 
 int main() {
-  auto raw = PiRaw2::FromJpeg(ReadFile("test.jpg"));
-  auto* image = raw.GetImage();
+  auto image = PiRaw2::FromJpeg(ReadFile("test.jpg"));
   auto closest = ColorCheckerClosest(*image);
   for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
     const auto& coord = closest.at(cc);
@@ -22,5 +21,5 @@ int main() {
     image->DrawSquare({std::max(8U, coord.x) - 8, std::max(8U, coord.y) - 8}, color, 16);
     image->DrawSquare({std::max(9U, coord.x) - 9, std::max(9U, coord.y) - 9}, kWhite, 18);
   }
-  WriteFile("test.png", raw.ToPng());
+  WriteFile("test.png", image->ToPng());
 }
