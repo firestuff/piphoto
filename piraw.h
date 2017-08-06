@@ -13,12 +13,14 @@ using string_view = experimental::string_view;
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
 class PiRaw {
  public:
+  PiRaw() = delete;
+  PiRaw(const PiRaw&) = delete;
+  PiRaw(PiRaw&&) = delete;
+
   static std::unique_ptr<Image<X, Y>> FromJpeg(const std::string_view& jpeg);
   static std::unique_ptr<Image<X, Y>> FromRaw(const std::string_view& raw);
 
  private:
-  PiRaw() {}
-
   static constexpr uint32_t kJpegHeaderBytes = 32768;
   static constexpr const char* kJpegHeaderMagic = "BRCM";
   static constexpr uint32_t kPixelsPerChunk = 4;
