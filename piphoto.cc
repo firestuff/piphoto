@@ -19,16 +19,16 @@ std::string ReadFile(const std::string& filename);
 void WriteFile(const std::string& filename, const std::string& contents);
 
 
-struct Pixel {
+struct Color {
   // 32-bit for compiler convenience, but values are 16-bit
   uint32_t r;
   uint32_t g;
   uint32_t b;
 
-  uint32_t Difference(const Pixel& other) const;
+  uint32_t Difference(const Color& other) const;
 };
 
-uint32_t Pixel::Difference(const Pixel& other) const {
+uint32_t Color::Difference(const Color& other) const {
   return (
     ((r > other.r) ? (r - other.r) : (other.r - r)) +
     ((g > other.g) ? (g - other.g) : (other.g - g)) +
@@ -38,7 +38,7 @@ uint32_t Pixel::Difference(const Pixel& other) const {
 
 
 constexpr uint32_t kNumColorChecker = 24;
-constexpr std::array<Pixel, kNumColorChecker> kColorCheckerSrgb = {{
+constexpr std::array<Color, kNumColorChecker> kColorCheckerSrgb = {{
   {0x7300, 0x5200, 0x4400},
   {0xc200, 0x9600, 0x8200},
   {0x6200, 0x7a00, 0x9d00},
@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream& os, const Coord& coord) {
 }
 
 template <uint32_t X, uint32_t Y>
-struct Image : public std::array<std::array<Pixel, X>, Y> {
+struct Image : public std::array<std::array<Color, X>, Y> {
   std::array<Coord, kNumColorChecker> ColorCheckerClosest() const;
 };
 
@@ -135,7 +135,7 @@ class PiRaw {
   typedef std::array<uint32_t, kPixelsPerChunk> Chunk;
 
   static Chunk GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y);
-  static Pixel CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1);
+  static Color CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1);
 
   std::unique_ptr<Image<X, Y>> image_;
 };
@@ -220,9 +220,9 @@ typename PiRaw<X,Y,D,A,P>::Chunk PiRaw<X,Y,D,A,P>::GetChunk(const std::string_vi
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-Pixel PiRaw<X,Y,D,A,P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
+Color PiRaw<X,Y,D,A,P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
   // Function is bit layout specific
-  Pixel ret;
+  Color ret;
   ret.r = y1x1;
   ret.g = (y0x1 + y1x0) / 2;
   ret.b = y0x0;
