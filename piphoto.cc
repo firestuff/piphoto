@@ -65,6 +65,9 @@ constexpr std::array<Color, kNumColorChecker> kColorCheckerSrgb = {{
   {0x3400, 0x3400, 0x3400},
 }};
 
+constexpr Color kBlack = Color{0x0000, 0x0000, 0x0000};
+constexpr Color kWhite = Color{0xffff, 0xffff, 0xffff};
+
 
 struct Coord {
   uint32_t x;
@@ -78,8 +81,17 @@ std::ostream& operator<<(std::ostream& os, const Coord& coord) {
 }
 
 template <uint32_t X, uint32_t Y>
-struct Image : public std::array<std::array<Color, X>, Y> {
+class Image : public std::array<std::array<Color, X>, Y> {
+ public:
   std::array<Coord, kNumColorChecker> ColorCheckerClosest() const;
+
+  Color GetPixel(const Coord& coord) const;
+
+  void SetPixel(const Coord& coord, const Color& color);
+  void DrawXLine(const Coord& start, const Color& color, uint32_t length);
+  void DrawYLine(const Coord& start, const Color& color, uint32_t length);
+  void DrawRectangle(const Coord& start, const Color& color, uint32_t x_length, uint32_t y_length);
+  void DrawSquare(const Coord& start, const Color& color, uint32_t length);
 };
 
 template <uint32_t X, uint32_t Y>
@@ -107,6 +119,45 @@ std::array<Coord, kNumColorChecker> Image<X, Y>::ColorCheckerClosest() const {
   return closest;
 }
 
+template <uint32_t X, uint32_t Y>
+Color Image<X, Y>::GetPixel(const Coord& coord) const {
+  return this->at(coord.y).at(coord.x);
+}
+
+template <uint32_t X, uint32_t Y>
+void Image<X, Y>::SetPixel(const Coord& coord, const Color& color) {
+  this->at(coord.y).at(coord.x) = color;
+}
+
+template <uint32_t X, uint32_t Y>
+void Image<X, Y>::DrawXLine(const Coord& coord, const Color& color, uint32_t length) {
+  auto& row = this->at(coord.y);
+
+  for (uint32_t x = coord.x; x < std::min(X, coord.x + length); ++x) {
+    row.at(x) = color;
+  }
+}
+
+template <uint32_t X, uint32_t Y>
+void Image<X, Y>::DrawYLine(const Coord& coord, const Color& color, uint32_t length) {
+  for (uint32_t y = coord.y; y <= std::min(Y, coord.y + length); ++y) {
+    SetPixel({coord.x, y}, color);
+  }
+}
+
+template <uint32_t X, uint32_t Y>
+void Image<X, Y>::DrawRectangle(const Coord& start, const Color& color, uint32_t x_length, uint32_t y_length) {
+  DrawXLine(start, color, x_length);
+  DrawXLine({start.x, start.y + y_length}, color, x_length);
+  DrawYLine(start, color, y_length);
+  DrawYLine({start.x + x_length, start.y}, color, y_length);
+}
+
+template <uint32_t X, uint32_t Y>
+void Image<X, Y>::DrawSquare(const Coord& start, const Color& color, uint32_t length) {
+  DrawRectangle(start, color, length, length);
+}
+
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
 class PiRaw {
@@ -117,7 +168,8 @@ class PiRaw {
 
   std::string ToPng();
 
-  const Image<X, Y>& GetImage();
+  Image<X, Y>* GetImage();
+  const Image<X, Y>& GetImage() const;
 
  private:
   static constexpr uint32_t kJpegHeaderBytes = 32768;
@@ -267,7 +319,12 @@ std::string PiRaw<X,Y,D,A,P>::ToPng() {
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-const Image<X, Y>& PiRaw<X,Y,D,A,P>::GetImage() {
+Image<X, Y>* PiRaw<X,Y,D,A,P>::GetImage() {
+  return image_.get();
+}
+
+template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
+const Image<X, Y>& PiRaw<X,Y,D,A,P>::GetImage() const {
   return *image_;
 }
 
@@ -297,9 +354,17 @@ void WriteFile(const std::string& filename, const std::string& contents) {
 
 int main() {
   auto raw = PiRaw2::FromJpeg(ReadFile("test.jpg"));
-  auto closest = raw.GetImage().ColorCheckerClosest();
+  auto* image = raw.GetImage();
+  auto closest = image->ColorCheckerClosest();
   for (uint32_t cc = 0; cc < kNumColorChecker; ++cc) {
-    std::cout << cc << ": " << closest.at(cc) << std::endl;
+    const auto& coord = closest.at(cc);
+    const auto& color = kColorCheckerSrgb.at(cc);
+    std::cout << cc << ": " << coord << " difference=" << color.Difference(image->GetPixel(coord)) << std::endl;
+    image->DrawSquare({std::max(5U, coord.x) - 5, std::max(5U, coord.y) - 5}, kBlack, 10);
+    image->DrawSquare({std::max(6U, coord.x) - 6, std::max(6U, coord.y) - 6}, color, 12);
+    image->DrawSquare({std::max(7U, coord.x) - 7, std::max(7U, coord.y) - 7}, color, 14);
+    image->DrawSquare({std::max(8U, coord.x) - 8, std::max(8U, coord.y) - 8}, color, 16);
+    image->DrawSquare({std::max(9U, coord.x) - 9, std::max(9U, coord.y) - 9}, kWhite, 18);
   }
   WriteFile("test.png", raw.ToPng());
 }
