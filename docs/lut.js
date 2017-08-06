@@ -23,6 +23,8 @@ class Point {
     this.g = g;
     this.b = b;
 
+    this.ref = 0;
+
     this.HEX_DIV = 256;
     this.HEX_PAD = 2;
   }
@@ -35,17 +37,25 @@ class Point {
     return leftPad(Math.floor(val / this.HEX_DIV).toString(16), this.HEX_PAD);
   }
 
+  incRef() {
+    this.ref++;
+  }
+
   addSwatch(parentElement) {
     let elem = createElement(parentElement, 'td')
-    elem.style = 'width: 5em; text-align: center; text-shadow: 1px 1px 0 white; background-color: ' + this.getHexColor();
+    elem.classList.add('swatch');
+    elem.style = 'background-color: ' + this.getHexColor();
     return elem;
   }
 
-  addColorCells(parentElement) {
-    this.addSwatch(parentElement);
+  addRgb(parentElement) {
     createElement(parentElement, 'td', leftPad(this.r.toString(16), 4));
     createElement(parentElement, 'td', leftPad(this.g.toString(16), 4));
     createElement(parentElement, 'td', leftPad(this.b.toString(16), 4));
+  }
+
+  addRef(parentElement) {
+    createElement(parentElement, 'td', this.ref);
   }
 }
 
@@ -53,13 +63,14 @@ class LutExperiment {
   constructor(container) {
     this.container = container;
 
-    this.SIZE = 5;
+    this.SIZE_X = 4;  // R
+    this.SIZE_Y = 3;  // G
+    this.SIZE_Z = 3;  // B
     this.NUM_COLOR = 2 ** 16;
-    this.PER_BLOCK = Math.floor(this.NUM_COLOR / (this.SIZE - 1));
     
     this.generatePoints();
 
-    this.colorChecker = [
+    this.COLOR_CHECKER = [
       new Point(0x7300, 0x5200, 0x4400),
       new Point(0xc200, 0x9600, 0x8200),
       new Point(0x6200, 0x7a00, 0x9d00),
@@ -86,27 +97,48 @@ class LutExperiment {
       new Point(0x3400, 0x3400, 0x3400),
     ];
 
+    this.CUBE_OFFSET = [
+      [0, 0, 0],
+      [1, 0, 0],
+      [1, 1, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+      [1, 0, 1],
+      [1, 1, 1],
+      [0, 1, 1],
+    ];
+
     this.showColorChecker();
     this.showResults();
   }
 
   generatePoints() {
     this.points = new Array();
-    for (let x = 0; x < this.SIZE; ++x) {
+    for (let x = 0; x < this.SIZE_X; ++x) {
       this.points[x] = new Array();
 
-      for (let y = 0; y < this.SIZE; ++y) {
+      for (let y = 0; y < this.SIZE_Y; ++y) {
         this.points[x][y] = new Array();
         
-        for (let z = 0; z < this.SIZE; ++z) {
-          this.points[x][y][z] = new Point(this.getColorValue(x), this.getColorValue(y), this.getColorValue(z));
+        for (let z = 0; z < this.SIZE_Z; ++z) {
+          this.points[x][y][z] = new Point(
+            this.getColorValue(x, this.SIZE_X),
+            this.getColorValue(y, this.SIZE_Y),
+            this.getColorValue(z, this.SIZE_Z),
+          );
         }
       }
     }
   }
 
-  getColorValue(index) {
-    return Math.min(this.NUM_COLOR - 1, this.PER_BLOCK * index);
+  getColorValue(index, size) {
+    let per_block = Math.floor(this.NUM_COLOR / (size - 1));
+    return Math.min(this.NUM_COLOR - 1, per_block * index);
+  }
+
+  getIndex(val, size) {
+    let per_block = Math.floor(this.NUM_COLOR / (size - 1));
+    return Math.min(Math.floor(val / per_block), size - 2);
   }
 
   showColorChecker() {
@@ -117,29 +149,23 @@ class LutExperiment {
     createElement(headers, 'th', 'R');
     createElement(headers, 'th', 'G');
     createElement(headers, 'th', 'B');
-    createElement(headers, 'th', 'Root');
-    createElement(headers, 'th', 'x+1');
-    createElement(headers, 'th', 'y+1');
-    createElement(headers, 'th', 'z+1');
-    createElement(headers, 'th', 'x+1,y+1');
-    createElement(headers, 'th', 'x+1,z+1');
-    createElement(headers, 'th', 'y+1,z+1');
+    for (let offset of this.CUBE_OFFSET) {
+      createElement(headers, 'th', offset.join(','));
+    }
 
-    for (let point of this.colorChecker) {
+    for (let point of this.COLOR_CHECKER) {
       let tr = createElement(table, 'tr');
-      point.addColorCells(tr);
+      point.addSwatch(tr);
+      point.addRgb(tr);
 
-      let rootX = Math.min(Math.floor(point.r / this.PER_BLOCK), this.SIZE - 2);
-      let rootY = Math.min(Math.floor(point.g / this.PER_BLOCK), this.SIZE - 2);
-      let rootZ = Math.min(Math.floor(point.b / this.PER_BLOCK), this.SIZE - 2);
+      let x = this.getIndex(point.r, this.SIZE_X);
+      let y = this.getIndex(point.g, this.SIZE_Y);
+      let z = this.getIndex(point.b, this.SIZE_Z);
 
-      this.points[rootX][rootY][rootZ].addSwatch(tr).textContent = rootX + ',' + rootY + ',' + rootZ;
-      this.points[rootX + 1][rootY][rootZ].addSwatch(tr);
-      this.points[rootX][rootY + 1][rootZ].addSwatch(tr);
-      this.points[rootX][rootY][rootZ + 1].addSwatch(tr);
-      this.points[rootX + 1][rootY + 1][rootZ].addSwatch(tr);
-      this.points[rootX + 1][rootY][rootZ + 1].addSwatch(tr);
-      this.points[rootX][rootY + 1][rootZ + 1].addSwatch(tr);
+      for (let [ox, oy, oz] of this.CUBE_OFFSET) {
+        this.addSwatch(tr, x + ox, y + oy, z + oz);
+        this.points[x + ox][y + oy][z + oz].incRef();
+      }
     }
   }
 
@@ -147,30 +173,26 @@ class LutExperiment {
     let table = createElement(this.container, 'table');
 
     let headers = createElement(table, 'tr');
-    createElement(headers, 'th', 'X');
-    createElement(headers, 'th', 'Y');
-    createElement(headers, 'th', 'Z');
     createElement(headers, 'th', 'Swatch');
     createElement(headers, 'th', 'R');
     createElement(headers, 'th', 'G');
     createElement(headers, 'th', 'B');
+    createElement(headers, 'th', 'Ref');
 
-    for (let x = 0; x < this.SIZE; ++x) {
-      let square = this.points[x];
-
-      for (let y = 0; y < this.SIZE; ++y) {
-        let row = square[y];
-
-        for (let z = 0; z < this.SIZE; ++z) {
-          let point = row[z];
-
+    for (let x = 0; x < this.SIZE_X; ++x) {
+      for (let y = 0; y < this.SIZE_Y; ++y) {
+        for (let z = 0; z < this.SIZE_Z; ++z) {
+          let point = this.points[x][y][z];
           let tr = createElement(table, 'tr');
-          createElement(tr, 'td', x);
-          createElement(tr, 'td', y);
-          createElement(tr, 'td', z);
-          point.addColorCells(tr);
+          this.addSwatch(tr, x, y, z);
+          point.addRgb(tr);
+          point.addRef(tr);
         }
       }
     }
+  }
+
+  addSwatch(parentElement, x, y, z) {
+    this.points[x][y][z].addSwatch(parentElement).textContent = x + ',' + y + ',' + z;
   }
 }
