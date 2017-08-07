@@ -11,7 +11,12 @@ struct Coord3d {
 template <uint32_t R, uint32_t G, uint32_t B>
 class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
  public:
+  static std::unique_ptr<Lut3d<R, G, B>> Identity();
+
   Color MapColor(const Color& in) const;
+
+  template <uint32_t X, uint32_t Y>
+  std::unique_ptr<Image<X, Y>> MapImage(const Image<X, Y>& in) const;
 
  private:
   constexpr static Color InterpolateColor(const Color& i0, const Color& i1, uint32_t mul, uint32_t div);
@@ -23,6 +28,29 @@ class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
 
   constexpr static uint32_t BlockSize(uint32_t points);
 };
+
+template <uint32_t R, uint32_t G, uint32_t B>
+std::unique_ptr<Lut3d<R, G, B>> Lut3d<R, G, B>::Identity() {
+  auto ret = std::make_unique<Lut3d<R, G, B>>();
+
+  Color color;
+  for (uint32_t r = 0; r < R; ++r) {
+    auto& rect = ret->at(r);
+    color.r = std::min(kNumColors - 1, BlockSize(R) * r);
+
+    for (uint32_t g = 0; g < G; ++g) {
+      auto& row = rect.at(g);
+      color.g = std::min(kNumColors - 1, BlockSize(G) * g);
+
+      for (uint32_t b = 0; b < B; ++b) {
+        color.b = std::min(kNumColors - 1, BlockSize(B) * b);
+        row.at(b) = color;
+      }
+    }
+  }
+
+  return ret;
+}
 
 template <uint32_t R, uint32_t G, uint32_t B>
 Color Lut3d<R, G, B>::MapColor(const Color& in) const {
@@ -62,6 +90,21 @@ Color Lut3d<R, G, B>::MapColor(const Color& in) const {
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
+template <uint32_t X, uint32_t Y>
+std::unique_ptr<Image<X, Y>> Lut3d<R, G, B>::MapImage(const Image<X, Y>& in) const {
+  auto out = std::make_unique<Image<X, Y>>();
+
+  for (uint32_t y = 0; y < Y; ++y) {
+    for (uint32_t x = 0; x < X; ++x) {
+      Coord coord = {x, y};
+      out->SetPixel(coord, MapColor(in.GetPixel(coord)));
+    }
+  }
+
+  return out;
+}
+
+template <uint32_t R, uint32_t G, uint32_t B>
 constexpr Color Lut3d<R, G, B>::InterpolateColor(const Color& i0, const Color& i1, uint32_t mul, uint32_t div) {
   return {
     Interpolate(i0.r, i1.r, mul, div),
@@ -72,14 +115,15 @@ constexpr Color Lut3d<R, G, B>::InterpolateColor(const Color& i0, const Color& i
 
 template <uint32_t R, uint32_t G, uint32_t B>
 constexpr uint32_t Lut3d<R, G, B>::Interpolate(uint32_t i0, uint32_t i1, uint32_t mul, uint32_t div) {
-  return i0 + ((mul * i1) / div);
+  assert(i1 >= i0);
+  return i0 + ((mul * (i1 - i0)) / div);
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
 constexpr std::pair<Coord3d, Coord3d> Lut3d<R, G, B>::FindRoot(const Color& in) {
   auto root_r = FindChannelRoot(in.r, R);
-  auto root_g = FindChannelRoot(in.r, G);
-  auto root_b = FindChannelRoot(in.r, B);
+  auto root_g = FindChannelRoot(in.g, G);
+  auto root_b = FindChannelRoot(in.b, B);
   return {
     {root_r.first, root_g.first, root_b.first},
     {root_r.second, root_g.second, root_b.second},
@@ -95,6 +139,6 @@ constexpr std::pair<uint32_t, uint32_t> Lut3d<R, G, B>::FindChannelRoot(const ui
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
-constexpr uint32_t BlockSize(uint32_t points) {
+constexpr uint32_t Lut3d<R, G, B>::BlockSize(uint32_t points) {
   return kNumColors / (points - 1);
 }

@@ -5,6 +5,9 @@
 #include "color.h"
 #include "coord.h"
 #include "image.h"
+#include "lut.h"
+
+typedef Lut3d<4, 3, 3> ColorCheckerLut3d;
 
 constexpr std::array<Color, 24> kColorCheckerSrgb = {{
   {0x7300, 0x5200, 0x4400},

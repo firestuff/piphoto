@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 
 constexpr uint32_t kNumColors = (1 << 16);
 
@@ -20,3 +21,5 @@ constexpr uint32_t Color::Difference(const Color& other) const {
     ((b > other.b) ? (b - other.b) : (other.b - b))
   );
 }
+
+std::ostream& operator<<(std::ostream& os, const Color& color);

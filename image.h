@@ -61,7 +61,7 @@ void Image<X, Y>::DrawSquare(const Coord& start, const Color& color, uint32_t le
   DrawRectangle(start, color, length, length);
 }
 
-static void WriteCallback(png_structp png_ptr, png_bytep data, png_size_t length) {
+static inline void WriteCallback(png_structp png_ptr, png_bytep data, png_size_t length) {
   auto dest = static_cast<std::string*>(png_get_io_ptr(png_ptr));
   dest->append(reinterpret_cast<char*>(data), length);
 }
