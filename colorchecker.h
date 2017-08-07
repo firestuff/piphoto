@@ -7,6 +7,7 @@
 #include "image.h"
 #include "lut.h"
 
+// Maximum LUT size that has each point adjacent to at least one ColorChecker color.
 typedef Lut3d<4, 3, 3> ColorCheckerLut3d;
 
 constexpr std::array<Color, 24> kColorCheckerSrgb = {{
