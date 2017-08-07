@@ -130,7 +130,8 @@ constexpr std::pair<uint32_t, uint32_t> Lut3d<R, G, B>::FindChannelRoot(const ui
   // points - 1 is the last point index. Since we're going to fidn the cube
   // around this point by adding to the root, we need to be at least 1 less
   // than that.
-  return std::make_pair(std::min(points - 2, value / BlockSize(points)), value % BlockSize(points));;
+  uint32_t index = std::min(points - 2, value / BlockSize(points));
+  return std::make_pair(index, value - (index * BlockSize(points)));
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
