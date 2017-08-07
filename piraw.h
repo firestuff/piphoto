@@ -17,8 +17,8 @@ class PiRaw {
   PiRaw(const PiRaw&) = delete;
   PiRaw(PiRaw&&) = delete;
 
-  static std::unique_ptr<Image<X, Y>> FromJpeg(const std::string_view& jpeg);
-  static std::unique_ptr<Image<X, Y>> FromRaw(const std::string_view& raw);
+  static std::unique_ptr<Image<X / 2, Y / 2>> FromJpeg(const std::string_view& jpeg);
+  static std::unique_ptr<Image<X / 2, Y / 2>> FromRaw(const std::string_view& raw);
 
  private:
   static constexpr uint32_t kJpegHeaderBytes = 32768;
@@ -42,21 +42,21 @@ class PiRaw {
 typedef PiRaw<3280, 2464, 10, 16, 2> PiRaw2;
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename std::unique_ptr<Image<X, Y>> PiRaw<X, Y, D, A, P>::FromJpeg(const std::string_view& jpeg) {
+typename std::unique_ptr<Image<X / 2, Y / 2>> PiRaw<X, Y, D, A, P>::FromJpeg(const std::string_view& jpeg) {
   auto container_len = GetRawBytes() + kJpegHeaderBytes;
   assert(jpeg.substr(jpeg.size() - container_len, 4) == kJpegHeaderMagic);
   return FromRaw(jpeg.substr(jpeg.size() - GetRawBytes(), GetRawBytes()));
 }
 
 template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename std::unique_ptr<Image<X, Y>> PiRaw<X, Y, D, A, P>::FromRaw(const std::string_view& raw) {
+typename std::unique_ptr<Image<X / 2, Y / 2>> PiRaw<X, Y, D, A, P>::FromRaw(const std::string_view& raw) {
   static_assert(X % 2 == 0);
   static_assert(Y % 2 == 0);
   static_assert(kPixelsPerChunk == 4);
 
   assert(raw.size() == GetRawBytes());
 
-  auto image = std::make_unique<Image<X, Y>>();
+  auto image = std::make_unique<Image<X / 2, Y / 2>>();
 
   for (uint32_t y = 0, out_y = 0; y < Y; y += 2, ++out_y) {
     for (uint32_t x_chunk = 0, out_x = 0; x_chunk < X / kPixelsPerChunk; ++x_chunk, out_x += kPixelsPerChunk / 2) {

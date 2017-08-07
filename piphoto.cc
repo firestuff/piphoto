@@ -5,6 +5,7 @@
 #include "colors.h"
 #include "coord.h"
 #include "image.h"
+#include "lut.h"
 #include "piraw.h"
 #include "util.h"
 

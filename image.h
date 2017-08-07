@@ -76,7 +76,7 @@ std::string Image<X, Y>::ToPng() {
   assert(info_ptr);
 
   png_set_write_fn(png_ptr, &ret, &WriteCallback, nullptr);
-  png_set_IHDR(png_ptr, info_ptr, X / 2, Y / 2,
+  png_set_IHDR(png_ptr, info_ptr, X, Y,
     16, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
     PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
