@@ -1,12 +1,7 @@
 #pragma once
 
 #include "color.h"
-
-struct Coord3d {
-  uint32_t r;
-  uint32_t g;
-  uint32_t b;
-};
+#include "coord.h"
 
 template <uint32_t R, uint32_t G, uint32_t B>
 class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
