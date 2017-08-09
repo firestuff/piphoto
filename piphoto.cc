@@ -9,6 +9,6 @@ int main() {
   auto image = PiRaw2::FromJpeg(ReadFile("test.jpg"));
   auto lut = MinimalLut3d::Identity();
   auto image2 = lut->MapImage(*image);
-  HighlightClosest(image2.get());
-  WriteFile("test.png", image2->ToPng());
+  std::cout << "Score: " << ScoreImage(*image2) << std::endl;
+  WriteFile("test.png", HighlightClosest(*image2)->ToPng());
 }

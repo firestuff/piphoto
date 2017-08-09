@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <numeric>
 
 #include "color.h"
 #include "colors.h"
@@ -64,15 +65,41 @@ std::array<Coord, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y>& image
 }
 
 template <uint32_t X, uint32_t Y>
-void HighlightClosest(Image<X, Y>* image) {
-  auto closest = FindClosest(*image);
+uint32_t ScoreImage(const Image<X, Y>& image) {
+  std::array<uint32_t, kColorCheckerSrgb.size()> diff;
+  diff.fill(UINT32_MAX);
+
+  for (uint32_t y = 0; y < Y; ++y) {
+    const auto& row = image.at(y);
+
+    for (uint32_t x = 0; x < X; ++x) {
+      const auto& pixel = row.at(x);
+
+      for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
+        auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
+        if (pixel_diff < diff.at(cc)) {
+          diff.at(cc) = pixel_diff;
+        }
+      }
+    }
+  }
+
+  return std::accumulate(diff.begin(), diff.end(), UINT32_C(0));
+}
+
+template <uint32_t X, uint32_t Y>
+std::unique_ptr<Image<X, Y>> HighlightClosest(const Image<X, Y>& image) {
+  auto out = std::make_unique<Image<X, Y>>(image);
+
+  auto closest = FindClosest(*out);
   for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
     const auto& coord = closest.at(cc);
     const auto& color = kColorCheckerSrgb.at(cc);
-    image->DrawSquare({std::max(5U, coord.x) - 5, std::max(5U, coord.y) - 5}, kBlack, 10);
-    image->DrawSquare({std::max(6U, coord.x) - 6, std::max(6U, coord.y) - 6}, color, 12);
-    image->DrawSquare({std::max(7U, coord.x) - 7, std::max(7U, coord.y) - 7}, color, 14);
-    image->DrawSquare({std::max(8U, coord.x) - 8, std::max(8U, coord.y) - 8}, color, 16);
-    image->DrawSquare({std::max(9U, coord.x) - 9, std::max(9U, coord.y) - 9}, kWhite, 18);
+    out->DrawSquare({std::max(5U, coord.x) - 5, std::max(5U, coord.y) - 5}, kBlack, 10);
+    out->DrawSquare({std::max(6U, coord.x) - 6, std::max(6U, coord.y) - 6}, color, 12);
+    out->DrawSquare({std::max(7U, coord.x) - 7, std::max(7U, coord.y) - 7}, color, 14);
+    out->DrawSquare({std::max(8U, coord.x) - 8, std::max(8U, coord.y) - 8}, color, 16);
+    out->DrawSquare({std::max(9U, coord.x) - 9, std::max(9U, coord.y) - 9}, kWhite, 18);
   }
+  return out;
 }
