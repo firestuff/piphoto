@@ -3,6 +3,7 @@
 #include <array>
 
 #include "color.h"
+#include "colors.h"
 #include "coord.h"
 #include "image.h"
 #include "lut.h"
@@ -38,7 +39,7 @@ constexpr std::array<Color, 24> kColorCheckerSrgb = {{
 }};
 
 template <uint32_t X, uint32_t Y>
-std::array<Coord, kColorCheckerSrgb.size()> ColorCheckerClosest(const Image<X, Y>& image) {
+std::array<Coord, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y>& image) {
   std::array<Coord, kColorCheckerSrgb.size()> closest;
   std::array<uint32_t, kColorCheckerSrgb.size()> diff;
   diff.fill(UINT32_MAX);
@@ -60,4 +61,18 @@ std::array<Coord, kColorCheckerSrgb.size()> ColorCheckerClosest(const Image<X, Y
   }
 
   return closest;
+}
+
+template <uint32_t X, uint32_t Y>
+void HighlightClosest(Image<X, Y>* image) {
+  auto closest = FindClosest(*image);
+  for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
+    const auto& coord = closest.at(cc);
+    const auto& color = kColorCheckerSrgb.at(cc);
+    image->DrawSquare({std::max(5U, coord.x) - 5, std::max(5U, coord.y) - 5}, kBlack, 10);
+    image->DrawSquare({std::max(6U, coord.x) - 6, std::max(6U, coord.y) - 6}, color, 12);
+    image->DrawSquare({std::max(7U, coord.x) - 7, std::max(7U, coord.y) - 7}, color, 14);
+    image->DrawSquare({std::max(8U, coord.x) - 8, std::max(8U, coord.y) - 8}, color, 16);
+    image->DrawSquare({std::max(9U, coord.x) - 9, std::max(9U, coord.y) - 9}, kWhite, 18);
+  }
 }

@@ -24,6 +24,9 @@ class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
   constexpr static uint32_t BlockSize(uint32_t points);
 };
 
+// Minimum size LUT
+typedef Lut3d<2, 2, 2> MinimalLut3d;
+
 template <uint32_t R, uint32_t G, uint32_t B>
 std::unique_ptr<Lut3d<R, G, B>> Lut3d<R, G, B>::Identity() {
   auto ret = std::make_unique<Lut3d<R, G, B>>();
