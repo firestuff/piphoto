@@ -99,12 +99,12 @@ constexpr typename PiRaw<X, Y, D, A, P>::Chunk PiRaw<X, Y, D, A, P>::GetChunk(co
   // Function is bit depth & layout specific
   static_assert(D == 10);
 
-  auto start = y * GetRowBytes() + x_chunk * GetChunkBytes();
-  auto high0 = static_cast<uint32_t>(raw.at(start + 0));
-  auto high1 = static_cast<uint32_t>(raw.at(start + 1));
-  auto high2 = static_cast<uint32_t>(raw.at(start + 2));
-  auto high3 = static_cast<uint32_t>(raw.at(start + 3));
-  auto packed_low = static_cast<uint32_t>(raw.at(start + 4));
+  uint32_t start = y * GetRowBytes() + x_chunk * GetChunkBytes();
+  uint32_t high0 = static_cast<uint8_t>(raw.at(start + 0));
+  uint32_t high1 = static_cast<uint8_t>(raw.at(start + 1));
+  uint32_t high2 = static_cast<uint8_t>(raw.at(start + 2));
+  uint32_t high3 = static_cast<uint8_t>(raw.at(start + 3));
+  uint32_t packed_low = static_cast<uint8_t>(raw.at(start + 4));
 
   Chunk ret;
   ret.at(0) = ((high0 << 2) | ((packed_low >> 6) & 0b11)) << 6;
