@@ -3,15 +3,17 @@
 #include <cstdint>
 #include <ostream>
 
-struct Coord {
-  uint32_t x;
-  uint32_t y;
-};
+template <uint32_t D>
+struct Coord : public std::array<uint32_t, D> {};
 
-struct Coord3d {
-  uint32_t r;
-  uint32_t g;
-  uint32_t b;
-};
-
-std::ostream& operator<<(std::ostream& os, const Coord& coord);
+template <uint32_t D>
+std::ostream& operator<<(std::ostream& os, const Coord<D>& coord) {
+  os << "(";
+  for (uint32_t d = 0; d < D; ++d) {
+    os << coord.at(d);
+    if (d < D - 1) {
+      os << ", ";
+    }
+  }
+  return os << ")";
+}

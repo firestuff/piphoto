@@ -10,15 +10,15 @@ namespace std {
 using string_view = experimental::string_view;
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
 class PiRaw {
  public:
   PiRaw() = delete;
   PiRaw(const PiRaw&) = delete;
   PiRaw(PiRaw&&) = delete;
 
-  static std::unique_ptr<Image<X / 2, Y / 2>> FromJpeg(const std::string_view& jpeg);
-  static std::unique_ptr<Image<X / 2, Y / 2>> FromRaw(const std::string_view& raw);
+  static std::unique_ptr<Image<X / 2, Y / 2, C>> FromJpeg(const std::string_view& jpeg);
+  static std::unique_ptr<Image<X / 2, Y / 2, C>> FromRaw(const std::string_view& raw);
 
  private:
   static constexpr uint32_t kJpegHeaderBytes = 32768;
@@ -36,27 +36,30 @@ class PiRaw {
   typedef std::array<uint32_t, kPixelsPerChunk> Chunk;
 
   static constexpr Chunk GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y);
-  static constexpr Color CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1);
+  static constexpr Color<C> CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1);
 };
 
-typedef PiRaw<3280, 2464, 10, 16, 2> PiRaw2;
+typedef PiRaw<3280, 2464, 3, 10, 16, 2> PiRaw2;
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename std::unique_ptr<Image<X / 2, Y / 2>> PiRaw<X, Y, D, A, P>::FromJpeg(const std::string_view& jpeg) {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+typename std::unique_ptr<Image<X / 2, Y / 2, C>> PiRaw<X, Y, C, D, A, P>::FromJpeg(const std::string_view& jpeg) {
+  static_assert(C == 3);
+
   auto container_len = GetRawBytes() + kJpegHeaderBytes;
   assert(jpeg.substr(jpeg.size() - container_len, 4) == kJpegHeaderMagic);
   return FromRaw(jpeg.substr(jpeg.size() - GetRawBytes(), GetRawBytes()));
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-typename std::unique_ptr<Image<X / 2, Y / 2>> PiRaw<X, Y, D, A, P>::FromRaw(const std::string_view& raw) {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+typename std::unique_ptr<Image<X / 2, Y / 2, C>> PiRaw<X, Y, C, D, A, P>::FromRaw(const std::string_view& raw) {
+  static_assert(C == 3);
   static_assert(X % 2 == 0);
   static_assert(Y % 2 == 0);
   static_assert(kPixelsPerChunk == 4);
 
   assert(raw.size() == GetRawBytes());
 
-  auto image = std::make_unique<Image<X / 2, Y / 2>>();
+  auto image = std::make_unique<Image<X / 2, Y / 2, C>>();
 
   for (uint32_t y = 0, out_y = 0; y < Y; y += 2, ++out_y) {
     for (uint32_t x_chunk = 0, out_x = 0; x_chunk < X / kPixelsPerChunk; ++x_chunk, out_x += kPixelsPerChunk / 2) {
@@ -69,34 +72,35 @@ typename std::unique_ptr<Image<X / 2, Y / 2>> PiRaw<X, Y, D, A, P>::FromRaw(cons
   return image;
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X, Y, D, A, P>::GetRawBytes() {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr uint32_t PiRaw<X, Y, C, D, A, P>::GetRawBytes() {
   return GetRowBytes() * GetNumRows();
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X, Y, D, A, P>::GetRowBytes() {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr uint32_t PiRaw<X, Y, C, D, A, P>::GetRowBytes() {
   return Align(Align(X + P) * D / kBitsPerByte);
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X, Y, D, A, P>::GetNumRows() {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr uint32_t PiRaw<X, Y, C, D, A, P>::GetNumRows() {
   return Align(Y + P);
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X, Y, D, A, P>::GetChunkBytes() {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr uint32_t PiRaw<X, Y, C, D, A, P>::GetChunkBytes() {
   return D * kPixelsPerChunk / kBitsPerByte;
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr uint32_t PiRaw<X, Y, D, A, P>::Align(uint32_t val) {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr uint32_t PiRaw<X, Y, C, D, A, P>::Align(uint32_t val) {
   return (~(A - 1)) & ((val) + (A - 1));
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr typename PiRaw<X, Y, D, A, P>::Chunk PiRaw<X, Y, D, A, P>::GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y) {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr typename PiRaw<X, Y, C, D, A, P>::Chunk PiRaw<X, Y, C, D, A, P>::GetChunk(const std::string_view& raw, const uint32_t x_chunk, const uint32_t y) {
   // Function is bit depth & layout specific
+  static_assert(C == 3);
   static_assert(D == 10);
 
   uint32_t start = y * GetRowBytes() + x_chunk * GetChunkBytes();
@@ -114,10 +118,12 @@ constexpr typename PiRaw<X, Y, D, A, P>::Chunk PiRaw<X, Y, D, A, P>::GetChunk(co
   return ret;
 }
 
-template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
-constexpr Color PiRaw<X, Y, D, A, P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
+template <uint32_t X, uint32_t Y, uint32_t C, uint32_t D, uint32_t A, uint32_t P>
+constexpr Color<C> PiRaw<X, Y, C, D, A, P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
   // Function is bit layout specific
-  Color ret;
+  static_assert(C == 3);
+
+  Color<C> ret;
   ret.at(0) = y1x1;
   ret.at(1) = (y0x1 + y1x0) / 2;
   ret.at(2) = y0x0;
