@@ -10,6 +10,6 @@ constexpr T Interpolate(T val0, T val1, T mul, T div) {
   if (val1 > val0) {
     return val0 + ((mul * (val1 - val0)) / div);
   } else {
-    return val1 - (((div - mul) * (val0 - val1)) / div);
+    return val0 - (((div - mul) * (val0 - val1)) / div);
   }
 }
