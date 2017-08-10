@@ -84,9 +84,9 @@ std::string Image<X, Y>::ToPng() {
   for (auto& row : *this) {
     std::array<uint16_t, X * 3> out_row;
     for (uint32_t x = 0; x < X; ++x) {
-      out_row[x * 3 + 0] = htons(static_cast<uint16_t>(row[x].r));
-      out_row[x * 3 + 1] = htons(static_cast<uint16_t>(row[x].g));
-      out_row[x * 3 + 2] = htons(static_cast<uint16_t>(row[x].b));
+      out_row[x * 3 + 0] = htons(static_cast<uint16_t>(row[x].at(0)));
+      out_row[x * 3 + 1] = htons(static_cast<uint16_t>(row[x].at(1)));
+      out_row[x * 3 + 2] = htons(static_cast<uint16_t>(row[x].at(2)));
     }
     png_write_row(png_ptr, reinterpret_cast<unsigned char*>(out_row.data()));
   }

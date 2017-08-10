@@ -118,8 +118,8 @@ template <uint32_t X, uint32_t Y, uint32_t D, uint32_t A, uint32_t P>
 constexpr Color PiRaw<X, Y, D, A, P>::CombineRaw(uint32_t y0x0, uint32_t y0x1, uint32_t y1x0, uint32_t y1x1) {
   // Function is bit layout specific
   Color ret;
-  ret.r = y1x1;
-  ret.g = (y0x1 + y1x0) / 2;
-  ret.b = y0x0;
+  ret.at(0) = y1x1;
+  ret.at(1) = (y0x1 + y1x0) / 2;
+  ret.at(2) = y0x0;
   return ret;
 }

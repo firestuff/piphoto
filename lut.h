@@ -6,7 +6,7 @@
 template <uint32_t R, uint32_t G, uint32_t B>
 class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
  public:
-  static std::unique_ptr<Lut3d<R, G, B>> Identity();
+  static Lut3d<R, G, B> Identity();
 
   Color MapColor(const Color& in) const;
 
@@ -28,20 +28,20 @@ class Lut3d : public std::array<std::array<std::array<Color, B>, G>, R> {
 typedef Lut3d<2, 2, 2> MinimalLut3d;
 
 template <uint32_t R, uint32_t G, uint32_t B>
-std::unique_ptr<Lut3d<R, G, B>> Lut3d<R, G, B>::Identity() {
-  auto ret = std::make_unique<Lut3d<R, G, B>>();
+Lut3d<R, G, B> Lut3d<R, G, B>::Identity() {
+  Lut3d<R, G, B> ret;
 
   Color color;
   for (uint32_t r = 0; r < R; ++r) {
-    auto& rect = ret->at(r);
-    color.r = std::min(kNumColors - 1, BlockSize(R) * r);
+    auto& rect = ret.at(r);
+    color.at(0) = std::min(kNumColors - 1, BlockSize(R) * r);
 
     for (uint32_t g = 0; g < G; ++g) {
       auto& row = rect.at(g);
-      color.g = std::min(kNumColors - 1, BlockSize(G) * g);
+      color.at(1) = std::min(kNumColors - 1, BlockSize(G) * g);
 
       for (uint32_t b = 0; b < B; ++b) {
-        color.b = std::min(kNumColors - 1, BlockSize(B) * b);
+        color.at(2) = std::min(kNumColors - 1, BlockSize(B) * b);
         row.at(b) = color;
       }
     }
@@ -104,24 +104,27 @@ std::unique_ptr<Image<X, Y>> Lut3d<R, G, B>::MapImage(const Image<X, Y>& in) con
 
 template <uint32_t R, uint32_t G, uint32_t B>
 constexpr Color Lut3d<R, G, B>::InterpolateColor(const Color& i0, const Color& i1, uint32_t mul, uint32_t div) {
-  return {
-    Interpolate(i0.r, i1.r, mul, div),
-    Interpolate(i0.g, i1.g, mul, div),
-    Interpolate(i0.b, i1.b, mul, div),
-  };
+  return {{{
+    Interpolate(i0.at(0), i1.at(0), mul, div),
+    Interpolate(i0.at(1), i1.at(1), mul, div),
+    Interpolate(i0.at(2), i1.at(2), mul, div),
+  }}};
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
 constexpr uint32_t Lut3d<R, G, B>::Interpolate(uint32_t i0, uint32_t i1, uint32_t mul, uint32_t div) {
-  assert(i1 >= i0);
-  return i0 + ((mul * (i1 - i0)) / div);
+  if (i1 > i0) {
+    return i0 + ((mul * (i1 - i0)) / div);
+  } else {
+    return i1 + ((mul * (i0 - i1)) / div);
+  }
 }
 
 template <uint32_t R, uint32_t G, uint32_t B>
 constexpr std::pair<Coord3d, Coord3d> Lut3d<R, G, B>::FindRoot(const Color& in) {
-  auto root_r = FindChannelRoot(in.r, R);
-  auto root_g = FindChannelRoot(in.g, G);
-  auto root_b = FindChannelRoot(in.b, B);
+  auto root_r = FindChannelRoot(in.at(0), R);
+  auto root_g = FindChannelRoot(in.at(1), G);
+  auto root_b = FindChannelRoot(in.at(2), B);
   return {
     {root_r.first, root_g.first, root_b.first},
     {root_r.second, root_g.second, root_b.second},

@@ -2,5 +2,5 @@
 
 #include "color.h"
 
-constexpr Color kBlack = Color{0x0000, 0x0000, 0x0000};
-constexpr Color kWhite = Color{0xffff, 0xffff, 0xffff};
+constexpr Color kBlack = {{{0x0000, 0x0000, 0x0000}}};
+constexpr Color kWhite = {{{0xffff, 0xffff, 0xffff}}};
