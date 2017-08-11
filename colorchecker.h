@@ -116,6 +116,7 @@ template <uint32_t P, uint32_t LUT_X, uint32_t LUT_Y, uint32_t LUT_Z, uint32_t I
 uint32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
   static_assert(C == 3);
 
+  auto snapshot = *lut;
   uint32_t diff = 0;
 
   for (uint32_t x = 0; x < LUT_X; ++x) {
@@ -130,16 +131,21 @@ uint32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LU
         std::cout << Coord<3>{{{x, y, z}}} << std::endl;
 
         for (uint32_t c = 0; c < C; ++c) {
+          auto& channel = color.at(c);
+
           auto min = FindPossibleMinimum<uint32_t, uint32_t, 4>(
             0, UINT16_MAX,
-            [&image, &lut, x, y, z, c](uint32_t val) {
-              auto test_lut = *lut;
+            [&image, &snapshot, x, y, z, c](uint32_t val) {
+              auto test_lut = snapshot;
               test_lut.at(x).at(y).at(z).at(c) = val;
               return ScoreImage(*test_lut.MapImage(image));
             });
-          std::cout << "\tC" << c << ": " << color.at(c) << " -> " << min << std::endl;
-          diff += AbsDiff(color.at(c), min);
-          color.at(c) = min;
+          // Magic value of 8 is the number of points making up a square, so the number
+          // of points that control any given given LUT mapping.
+          auto new_value = Interpolate(channel, min, UINT32_C(1), UINT32_C(8));
+          std::cout << "\tC" << c << ": " << channel << " -> " << new_value << " (interpolated from " << min << ")" << std::endl;
+          diff += AbsDiff(channel, new_value);
+          channel = new_value;
         }
       }
     }
