@@ -7,7 +7,7 @@
 
 int main() {
   auto image = PiRaw2::FromJpeg(ReadFile("test.jpg"));
-  std::cout << "Initial score: " << ScoreImage(*image) << std::endl;
+  std::cout << "Initial error: " << ScoreImage(*image) << std::endl;
 
   auto lut = MinimalLut3d::Identity();
   uint32_t diff = 1;
