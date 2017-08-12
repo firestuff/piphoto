@@ -112,7 +112,7 @@ std::unique_ptr<Image<X, Y, C>> HighlightClosest(const Image<X, Y, C>& image) {
   return out;
 }
 
-template <int32_t P, int32_t LUT_X, int32_t LUT_Y, int32_t LUT_Z, int32_t IMG_X, int32_t IMG_Y, int32_t C>
+template <int32_t LUT_X, int32_t LUT_Y, int32_t LUT_Z, int32_t IMG_X, int32_t IMG_Y, int32_t C>
 int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
   static_assert(C == 3);
 
@@ -148,6 +148,40 @@ int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT
           channel = new_value;
         }
       }
+    }
+  }
+
+  return diff;
+}
+
+template <int32_t LUT_X, int32_t IMG_X, int32_t IMG_Y, int32_t C>
+int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut1d<LUT_X>* lut) {
+  static_assert(C == 3);
+
+  auto snapshot = *lut;
+  int32_t diff = 0;
+
+  for (int32_t x = 0; x < LUT_X; ++x) {
+    auto& color = lut->at(x);
+
+    std::cout << Coord<1>{{{{x}}}} << std::endl;
+
+    for (int32_t c = 0; c < C; ++c) {
+      auto& channel = color.at(c);
+
+      auto min = FindPossibleMinimum<int32_t, int32_t, 8>(
+        -UINT16_MAX, UINT16_MAX * 2,
+        [&image, &snapshot, x, c](int32_t val) {
+          auto test_lut = snapshot;
+          test_lut.at(x).at(c) = val;
+          return ScoreLut(image, test_lut);
+        });
+      // Magic value of 8 is the number of points making up a square, so the number
+      // of points that control any given given LUT mapping.
+      auto new_value = Interpolate(channel, min, INT32_C(1), INT32_C(8));
+      std::cout << "\tC" << c << ": " << channel << " -> " << new_value << " (interpolated from " << min << ")" << std::endl;
+      diff += AbsDiff(channel, new_value);
+      channel = new_value;
     }
   }
 
