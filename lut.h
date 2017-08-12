@@ -32,14 +32,14 @@ Lut3d<X, Y, Z> Lut3d<X, Y, Z>::Identity() {
   Color<3> color;
   for (uint32_t x = 0; x < X; ++x) {
     auto& rect = ret.at(x);
-    color.at(0) = std::min(kMaxColor, BlockSize(X) * x);
+    color.at(0) = std::min(kMaxColor, static_cast<int32_t>(BlockSize(X) * x));
 
     for (uint32_t y = 0; y < Y; ++y) {
       auto& row = rect.at(y);
-      color.at(1) = std::min(kMaxColor, BlockSize(Y) * y);
+      color.at(1) = std::min(kMaxColor, static_cast<int32_t>(BlockSize(Y) * y));
 
       for (uint32_t z = 0; z < Z; ++z) {
-        color.at(2) = std::min(kMaxColor, BlockSize(Z) * z);
+        color.at(2) = std::min(kMaxColor, static_cast<int32_t>(BlockSize(Z) * z));
         row.at(z) = color;
       }
     }
@@ -58,31 +58,31 @@ Color<3> Lut3d<X, Y, Z>::MapColor(const Color<3>& in) const {
   auto inter00 =
     this->at(root.at(0) + 0).at(root.at(1) + 0).at(root.at(2) + 0).Interpolate(
     this->at(root.at(0) + 1).at(root.at(1) + 0).at(root.at(2) + 0),
-    rem.at(0),
+    static_cast<int32_t>(rem.at(0)),
     BlockSize(X));
 
   auto inter01 =
     this->at(root.at(0) + 0).at(root.at(1) + 0).at(root.at(2) + 1).Interpolate(
     this->at(root.at(0) + 1).at(root.at(1) + 0).at(root.at(2) + 1),
-    rem.at(0),
+    static_cast<int32_t>(rem.at(0)),
     BlockSize(X));
 
   auto inter10 =
     this->at(root.at(0) + 0).at(root.at(1) + 1).at(root.at(2) + 0).Interpolate(
     this->at(root.at(0) + 1).at(root.at(1) + 1).at(root.at(2) + 0),
-    rem.at(0),
+    static_cast<int32_t>(rem.at(0)),
     BlockSize(X));
 
   auto inter11 =
     this->at(root.at(0) + 0).at(root.at(1) + 1).at(root.at(2) + 1).Interpolate(
     this->at(root.at(0) + 1).at(root.at(1) + 1).at(root.at(2) + 1),
-    rem.at(0),
+    static_cast<int32_t>(rem.at(0)),
     BlockSize(X));
 
-  auto inter0 = inter00.Interpolate(inter10, rem.at(1), BlockSize(Y));
-  auto inter1 = inter01.Interpolate(inter11, rem.at(1), BlockSize(Y));
+  auto inter0 = inter00.Interpolate(inter10, static_cast<int32_t>(rem.at(1)), BlockSize(Y));
+  auto inter1 = inter01.Interpolate(inter11, static_cast<int32_t>(rem.at(1)), BlockSize(Y));
 
-  return inter0.Interpolate(inter1, rem.at(2), BlockSize(Z));
+  return inter0.Interpolate(inter1, static_cast<int32_t>(rem.at(2)), BlockSize(Z)).Crop();
 }
 
 template <uint32_t X, uint32_t Y, uint32_t Z>
@@ -102,9 +102,9 @@ std::unique_ptr<Image<IMG_X, IMG_Y, C>> Lut3d<X, Y, Z>::MapImage(const Image<IMG
 
 template <uint32_t X, uint32_t Y, uint32_t Z>
 constexpr std::pair<Coord<3>, Coord<3>> Lut3d<X, Y, Z>::FindRoot(const Color<3>& in) {
-  auto root_x = FindChannelRoot(in.at(0), X);
-  auto root_y = FindChannelRoot(in.at(1), Y);
-  auto root_z = FindChannelRoot(in.at(2), Z);
+  auto root_x = FindChannelRoot(static_cast<uint32_t>(in.at(0)), X);
+  auto root_y = FindChannelRoot(static_cast<uint32_t>(in.at(1)), Y);
+  auto root_z = FindChannelRoot(static_cast<uint32_t>(in.at(2)), Z);
   return {
     {{{root_x.first, root_y.first, root_z.first}}},
     {{{root_x.second, root_y.second, root_z.second}}},

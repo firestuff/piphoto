@@ -56,7 +56,7 @@ std::array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, C>&
       const auto& pixel = row.at(x);
 
       for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
-        auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
+        auto pixel_diff = pixel.AbsDiff(kColorCheckerSrgb.at(cc));
         if (pixel_diff < diff.at(cc)) {
           diff.at(cc) = pixel_diff;
           closest.at(cc) = {{{x, y}}};
@@ -82,7 +82,7 @@ uint32_t ScoreImage(const Image<X, Y, C>& image) {
       const auto& pixel = row.at(x);
 
       for (uint32_t cc = 0; cc < kColorCheckerSrgb.size(); ++cc) {
-        auto pixel_diff = pixel.Difference(kColorCheckerSrgb.at(cc));
+        auto pixel_diff = pixel.AbsDiff(kColorCheckerSrgb.at(cc));
         if (pixel_diff < diff.at(cc)) {
           diff.at(cc) = pixel_diff;
         }
@@ -133,18 +133,18 @@ uint32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LU
         for (uint32_t c = 0; c < C; ++c) {
           auto& channel = color.at(c);
 
-          auto min = FindPossibleMinimum<uint32_t, uint32_t, 4>(
-            0, UINT16_MAX,
-            [&image, &snapshot, x, y, z, c](uint32_t val) {
+          auto min = FindPossibleMinimum<int32_t, int32_t, 8>(
+            -UINT16_MAX, UINT16_MAX * 2,
+            [&image, &snapshot, x, y, z, c](int32_t val) {
               auto test_lut = snapshot;
               test_lut.at(x).at(y).at(z).at(c) = val;
               return ScoreImage(*test_lut.MapImage(image));
             });
           // Magic value of 8 is the number of points making up a square, so the number
           // of points that control any given given LUT mapping.
-          auto new_value = Interpolate(channel, min, UINT32_C(1), UINT32_C(8));
+          auto new_value = Interpolate(channel, min, INT32_C(1), INT32_C(8));
           std::cout << "\tC" << c << ": " << channel << " -> " << new_value << " (interpolated from " << min << ")" << std::endl;
-          diff += AbsDiff(channel, new_value);
+          diff += static_cast<uint32_t>(AbsDiff(channel, new_value));
           channel = new_value;
         }
       }

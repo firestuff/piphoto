@@ -124,8 +124,8 @@ constexpr Color<C> PiRaw<X, Y, C, D, A, P>::CombineRaw(uint32_t y0x0, uint32_t y
   static_assert(C == 3);
 
   Color<C> ret;
-  ret.at(0) = y1x1;
-  ret.at(1) = (y0x1 + y1x0) / 2;
-  ret.at(2) = y0x0;
+  ret.at(0) = static_cast<int32_t>(y1x1);
+  ret.at(1) = static_cast<int32_t>((y0x1 + y1x0) / 2);
+  ret.at(2) = static_cast<int32_t>(y0x0);
   return ret;
 }

@@ -15,7 +15,7 @@ struct Range {
 // Since it does a non-exhaustive search, can be fooled by distributions with
 // multiple peaks, especially those with the minimum in a narrow valley and
 // other wider valleys.
-template <typename I, typename O, uint32_t P>
+template <typename I, typename O, int32_t P>
 I FindPossibleMinimum(I min, I max, std::function<O(I)> callback) {
   if (min == max) {
     return min;
@@ -26,8 +26,8 @@ I FindPossibleMinimum(I min, I max, std::function<O(I)> callback) {
   const I step = ((max - min) / P) + 1;
   const I offset = step / 2;
   for (uint32_t i = 0; i < P; ++i) {
-    auto& range = ranges[i];
-    range.start = std::min(max, min + i * step);
+    auto& range = ranges.at(i);
+    range.start = std::min(max, min + static_cast<int32_t>(i) * step);
     range.end = std::min(max, range.start + (step - 1));
     range.testpoint = range.start + offset;
   }
