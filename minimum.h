@@ -21,13 +21,13 @@ I FindPossibleMinimum(I min, I max, std::function<O(I)> callback) {
     return min;
   }
 
-  std::array<Range<I, O>, P> ranges;
+  Array<Range<I, O>, P> ranges;
 
   const I step = ((max - min) / P) + 1;
   const I offset = step / 2;
-  for (uint32_t i = 0; i < P; ++i) {
+  for (int32_t i = 0; i < P; ++i) {
     auto& range = ranges.at(i);
-    range.start = std::min(max, min + static_cast<int32_t>(i) * step);
+    range.start = std::min(max, min + i * step);
     range.end = std::min(max, range.start + (step - 1));
     range.testpoint = range.start + offset;
   }

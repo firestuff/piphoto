@@ -11,7 +11,7 @@ int main() {
   std::cout << "Initial error: " << ScoreImage(*image) << std::endl;
 
   auto lut = MinimalLut3d::Identity();
-  uint32_t diff = 1;
+  int32_t diff = 1;
   while (diff) {
     diff = OptimizeLut<4>(*image, &lut);
     std::cout << "diff=" << diff << " error=" << ScoreImage(*lut.MapImage(*image)) << std::endl;
