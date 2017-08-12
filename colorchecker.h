@@ -103,11 +103,11 @@ std::unique_ptr<Image<X, Y, C>> HighlightClosest(const Image<X, Y, C>& image) {
   for (int32_t cc = 0; cc < kColorCheckerSrgb.ssize(); ++cc) {
     const auto& coord = closest.at(cc);
     const auto& color = kColorCheckerSrgb.at(cc);
-    out->DrawSquare({{{{std::max(5, coord.at(0)) - 5, std::max(5, coord.at(1)) - 5}}}}, kBlack, 10);
-    out->DrawSquare({{{{std::max(6, coord.at(0)) - 6, std::max(6, coord.at(1)) - 6}}}}, color, 12);
-    out->DrawSquare({{{{std::max(7, coord.at(0)) - 7, std::max(7, coord.at(1)) - 7}}}}, color, 14);
-    out->DrawSquare({{{{std::max(8, coord.at(0)) - 8, std::max(8, coord.at(1)) - 8}}}}, color, 16);
-    out->DrawSquare({{{{std::max(9, coord.at(0)) - 9, std::max(9, coord.at(1)) - 9}}}}, kWhite, 18);
+    out->DrawSquare({{{{coord.at(0) - 5, coord.at(1) - 5}}}}, kBlack, 10);
+    out->DrawSquare({{{{coord.at(0) - 6, coord.at(1) - 6}}}}, color, 12);
+    out->DrawSquare({{{{coord.at(0) - 7, coord.at(1) - 7}}}}, color, 14);
+    out->DrawSquare({{{{coord.at(0) - 8, coord.at(1) - 8}}}}, color, 16);
+    out->DrawSquare({{{{coord.at(0) - 9, coord.at(1) - 9}}}}, kWhite, 18);
   }
   return out;
 }

@@ -30,21 +30,22 @@ constexpr const Color<C>& Image<X, Y, C>::GetPixel(const Coord<2>& coord) const 
 
 template <int32_t X, int32_t Y, int32_t C>
 void Image<X, Y, C>::SetPixel(const Coord<2>& coord, const Color<C>& color) {
+  if (coord.at(0) >= X || coord.at(1) >= Y) {
+    return;
+  }
   this->at(coord.at(1)).at(coord.at(0)) = color;
 }
 
 template <int32_t X, int32_t Y, int32_t C>
 void Image<X, Y, C>::DrawXLine(const Coord<2>& coord, const Color<C>& color, int32_t length) {
-  auto& row = this->at(coord.at(1));
-
-  for (int32_t x = coord.at(0); x < std::min(X - 1, coord.at(0) + length); ++x) {
-    row.at(x) = color;
+  for (int32_t x = coord.at(0); x <= coord.at(0) + length; ++x) {
+    SetPixel({{{{x, coord.at(1)}}}}, color);
   }
 }
 
 template <int32_t X, int32_t Y, int32_t C>
 void Image<X, Y, C>::DrawYLine(const Coord<2>& coord, const Color<C>& color, int32_t length) {
-  for (int32_t y = coord.at(1); y <= std::min(Y - 1, coord.at(1) + length); ++y) {
+  for (int32_t y = coord.at(1); y <= coord.at(1) + length; ++y) {
     SetPixel({{{{coord.at(0), y}}}}, color);
   }
 }
