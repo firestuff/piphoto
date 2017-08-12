@@ -1,6 +1,6 @@
 all: piphoto
 
-objects = piphoto.o util.o
+objects = piphoto.o lut.o util.o
 
 piphoto: $(objects) Makefile
 	clang-3.9 -O3 -g -Weverything -Werror --std=c++1z --stdlib=libc++ -o piphoto $(objects) -lc++ -lunwind -lpng

@@ -8,13 +8,14 @@
 int main() {
   auto image = PiRaw2::FromJpeg(ReadFile("test.jpg"));
   WriteFile("start.png", HighlightClosest(*image)->ToPng());
-  std::cout << "Initial error: " << ScoreImage(*image) << std::endl;
 
   auto lut = MinimalLut3d::Identity();
+  std::cout << "Initial error: " << ScoreLut(*image, lut) << std::endl;
+
   int32_t diff = 1;
   while (diff) {
     diff = OptimizeLut<4>(*image, &lut);
-    std::cout << "diff=" << diff << " error=" << ScoreImage(*lut.MapImage(*image)) << std::endl;
+    std::cout << "diff=" << diff << " error=" << ScoreLut(*image, lut) << std::endl;
     WriteFile("inter.png", HighlightClosest(*lut.MapImage(*image))->ToPng());
   }
 

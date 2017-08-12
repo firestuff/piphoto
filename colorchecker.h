@@ -69,7 +69,7 @@ Array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, C>& imag
 }
 
 template <int32_t X, int32_t Y, int32_t C>
-int32_t ScoreImage(const Image<X, Y, C>& image) {
+int32_t ScoreLut(const Image<X, Y, C>& image, const Lut& lut) {
   static_assert(C == 3);
 
   Array<int32_t, kColorCheckerSrgb.size()> diff;
@@ -79,7 +79,7 @@ int32_t ScoreImage(const Image<X, Y, C>& image) {
     const auto& row = image.at(y);
 
     for (int32_t x = 0; x < X; ++x) {
-      const auto& pixel = row.at(x);
+      const auto pixel = lut.MapColor(row.at(x));
 
       for (int32_t cc = 0; cc < kColorCheckerSrgb.ssize(); ++cc) {
         auto pixel_diff = pixel.AbsDiff(kColorCheckerSrgb.at(cc));
@@ -138,7 +138,7 @@ int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT
             [&image, &snapshot, x, y, z, c](int32_t val) {
               auto test_lut = snapshot;
               test_lut.at(x).at(y).at(z).at(c) = val;
-              return ScoreImage(*test_lut.MapImage(image));
+              return ScoreLut(image, test_lut);
             });
           // Magic value of 8 is the number of points making up a square, so the number
           // of points that control any given given LUT mapping.

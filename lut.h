@@ -3,17 +3,41 @@
 #include "array.h"
 #include "color.h"
 #include "coord.h"
+#include "image.h"
 
-// Hardcoded to Color<3>, so color dimensions == LUT dimensions
+class Lut {
+ public:
+  Lut() = default;
+  Lut(const Lut&) = default;
+  virtual ~Lut();
+
+  virtual Color<3> MapColor(const Color<3>& in) const = 0;
+
+  template <int32_t X, int32_t Y, int32_t C>
+  std::unique_ptr<Image<X, Y, C>> MapImage(const Image<X, Y, C>& in) const;
+};
+
+template <int32_t X, int32_t Y, int32_t C>
+std::unique_ptr<Image<X, Y, C>> Lut::MapImage(const Image<X, Y, C>& in) const {
+  auto out = std::make_unique<Image<X, Y, C>>();
+
+  for (int32_t y = 0; y < Y; ++y) {
+    for (int32_t x = 0; x < X; ++x) {
+      Coord<2> coord = {{{{x, y}}}};
+      out->SetPixel(coord, MapColor(in.GetPixel(coord)));
+    }
+  }
+
+  return out;
+}
+
+
 template <int32_t X, int32_t Y, int32_t Z>
-class Lut3d : public Array<Array<Array<Color<3>, X>, Y>, Z> {
+class Lut3d : public Array<Array<Array<Color<3>, X>, Y>, Z>, public Lut {
  public:
   static Lut3d<X, Y, Z> Identity();
 
-  Color<3> MapColor(const Color<3>& in) const;
-
-  template <int32_t IMG_X, int32_t IMG_Y, int32_t C>
-  std::unique_ptr<Image<IMG_X, IMG_Y, C>> MapImage(const Image<IMG_X, IMG_Y, C>& in) const;
+  Color<3> MapColor(const Color<3>& in) const override;
 
  private:
   // Return value is (root_indices, remainders)
@@ -80,21 +104,6 @@ Color<3> Lut3d<X, Y, Z>::MapColor(const Color<3>& in) const {
   auto inter1 = inter01.Interpolate(inter11, rem.at(1), BlockSize(Y));
 
   return inter0.Interpolate(inter1, rem.at(2), BlockSize(Z)).Crop();
-}
-
-template <int32_t X, int32_t Y, int32_t Z>
-template <int32_t IMG_X, int32_t IMG_Y, int32_t C>
-std::unique_ptr<Image<IMG_X, IMG_Y, C>> Lut3d<X, Y, Z>::MapImage(const Image<IMG_X, IMG_Y, C>& in) const {
-  auto out = std::make_unique<Image<IMG_X, IMG_Y, C>>();
-
-  for (int32_t y = 0; y < IMG_Y; ++y) {
-    for (int32_t x = 0; x < IMG_X; ++x) {
-      Coord<2> coord = {{{{x, y}}}};
-      out->SetPixel(coord, MapColor(in.GetPixel(coord)));
-    }
-  }
-
-  return out;
 }
 
 template <int32_t X, int32_t Y, int32_t Z>
