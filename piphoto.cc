@@ -7,6 +7,7 @@
 
 int main() {
   auto image = PiRaw2::FromJpeg(ReadFile("test.jpg"));
+  WriteFile("start.png", HighlightClosest(*image)->ToPng());
   std::cout << "Initial error: " << ScoreImage(*image) << std::endl;
 
   auto lut = MinimalLut3d::Identity();
@@ -14,8 +15,8 @@ int main() {
   while (diff) {
     diff = OptimizeLut<4>(*image, &lut);
     std::cout << "diff=" << diff << " error=" << ScoreImage(*lut.MapImage(*image)) << std::endl;
+    WriteFile("inter.png", HighlightClosest(*lut.MapImage(*image))->ToPng());
   }
 
-  auto image2 = lut.MapImage(*image);
-  WriteFile("test.png", HighlightClosest(*image2)->ToPng());
+  WriteFile("test.png", HighlightClosest(*lut.MapImage(*image))->ToPng());
 }
