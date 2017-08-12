@@ -69,7 +69,7 @@ Array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, C>& imag
 }
 
 template <int32_t X, int32_t Y, int32_t C>
-int32_t ScoreLut(const Image<X, Y, C>& image, const Lut& lut) {
+int32_t ScoreLut(const Image<X, Y, C>& image, const LutBase& lut) {
   static_assert(C == 3);
 
   Array<int32_t, kColorCheckerSrgb.size()> diff;

@@ -1,4 +1,4 @@
 #include "lut.h"
 
-Lut::~Lut() {
+LutBase::~LutBase() {
 }

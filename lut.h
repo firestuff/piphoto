@@ -5,11 +5,11 @@
 #include "coord.h"
 #include "image.h"
 
-class Lut {
+class LutBase {
  public:
-  Lut() = default;
-  Lut(const Lut&) = default;
-  virtual ~Lut();
+  LutBase() = default;
+  LutBase(const LutBase&) = default;
+  virtual ~LutBase();
 
   virtual Color<3> MapColor(const Color<3>& in) const = 0;
 
@@ -18,7 +18,7 @@ class Lut {
 };
 
 template <int32_t X, int32_t Y, int32_t C>
-std::unique_ptr<Image<X, Y, C>> Lut::MapImage(const Image<X, Y, C>& in) const {
+std::unique_ptr<Image<X, Y, C>> LutBase::MapImage(const Image<X, Y, C>& in) const {
   auto out = std::make_unique<Image<X, Y, C>>();
 
   for (int32_t y = 0; y < Y; ++y) {
@@ -33,7 +33,7 @@ std::unique_ptr<Image<X, Y, C>> Lut::MapImage(const Image<X, Y, C>& in) const {
 
 
 template <int32_t X, int32_t Y, int32_t Z>
-class Lut3d : public Array<Array<Array<Color<3>, X>, Y>, Z>, public Lut {
+class Lut3d : public Array<Array<Array<Color<3>, X>, Y>, Z>, public LutBase {
  public:
   static Lut3d<X, Y, Z> Identity();
 
