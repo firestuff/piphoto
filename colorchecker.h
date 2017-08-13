@@ -14,7 +14,9 @@
 // Maximum LUT size that has each point adjacent to at least one ColorChecker color.
 typedef Lut3d<4, 3, 3> ColorCheckerLut3d;
 
-constexpr Array<RgbColor, 24> kColorCheckerSrgb = {{{
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+const Array<RgbColor, 24> kColorCheckerSrgb = {{{
   {{{{{0x7300, 0x5200, 0x4400}}}}},
   {{{{{0xc200, 0x9600, 0x8200}}}}},
   {{{{{0x6200, 0x7a00, 0x9d00}}}}},
@@ -40,11 +42,10 @@ constexpr Array<RgbColor, 24> kColorCheckerSrgb = {{{
   {{{{{0x5500, 0x5500, 0x5500}}}}},
   {{{{{0x3400, 0x3400, 0x3400}}}}},
 }}};
+#pragma clang diagnostic pop
 
-template <int32_t X, int32_t Y, int32_t C>
-Array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, C>& image) {
-  static_assert(C == 3);
-
+template <int32_t X, int32_t Y>
+Array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, RgbColor>& image) {
   Array<Coord<2>, kColorCheckerSrgb.size()> closest;
   Array<int32_t, kColorCheckerSrgb.size()> diff;
   diff.fill(INT32_MAX);
@@ -68,10 +69,8 @@ Array<Coord<2>, kColorCheckerSrgb.size()> FindClosest(const Image<X, Y, C>& imag
   return closest;
 }
 
-template <int32_t X, int32_t Y, int32_t C>
-int32_t ScoreLut(const Image<X, Y, C>& image, const LutBase& lut) {
-  static_assert(C == 3);
-
+template <int32_t X, int32_t Y>
+int32_t ScoreLut(const Image<X, Y, RgbColor>& image, const LutBase& lut) {
   Array<int32_t, kColorCheckerSrgb.size()> diff;
   diff.fill(INT32_MAX);
 
@@ -93,11 +92,9 @@ int32_t ScoreLut(const Image<X, Y, C>& image, const LutBase& lut) {
   return std::accumulate(diff.begin(), diff.end(), 0);
 }
 
-template <int32_t X, int32_t Y, int32_t C>
-std::unique_ptr<Image<X, Y, C>> HighlightClosest(const Image<X, Y, C>& image) {
-  static_assert(C == 3);
-
-  auto out = std::make_unique<Image<X, Y, C>>(image);
+template <int32_t X, int32_t Y>
+std::unique_ptr<Image<X, Y, RgbColor>> HighlightClosest(const Image<X, Y, RgbColor>& image) {
+  auto out = std::make_unique<Image<X, Y, RgbColor>>(image);
 
   auto closest = FindClosest(*out);
   for (int32_t cc = 0; cc < kColorCheckerSrgb.ssize(); ++cc) {
@@ -112,10 +109,8 @@ std::unique_ptr<Image<X, Y, C>> HighlightClosest(const Image<X, Y, C>& image) {
   return out;
 }
 
-template <int32_t LUT_X, int32_t LUT_Y, int32_t LUT_Z, int32_t IMG_X, int32_t IMG_Y, int32_t C>
-int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
-  static_assert(C == 3);
-
+template <int32_t LUT_X, int32_t LUT_Y, int32_t LUT_Z, int32_t IMG_X, int32_t IMG_Y>
+int32_t OptimizeLut(const Image<IMG_X, IMG_Y, RgbColor>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
   auto snapshot = *lut;
   int32_t diff = 0;
 
@@ -130,7 +125,7 @@ int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT
 
         std::cout << Coord<3>{{{{x, y, z}}}} << std::endl;
 
-        for (int32_t c = 0; c < C; ++c) {
+        for (int32_t c = 0; c < color.size(); ++c) {
           auto& channel = color.at(c);
 
           auto min = FindPossibleMinimum<int32_t, int32_t, 8>(
@@ -154,10 +149,8 @@ int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut3d<LUT_X, LUT_Y, LUT
   return diff;
 }
 
-template <int32_t LUT_X, int32_t IMG_X, int32_t IMG_Y, int32_t C>
-int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut1d<LUT_X>* lut) {
-  static_assert(C == 3);
-
+template <int32_t LUT_X, int32_t IMG_X, int32_t IMG_Y>
+int32_t OptimizeLut(const Image<IMG_X, IMG_Y, RgbColor>& image, Lut1d<LUT_X>* lut) {
   auto snapshot = *lut;
   int32_t diff = 0;
 
@@ -166,7 +159,7 @@ int32_t OptimizeLut(const Image<IMG_X, IMG_Y, C>& image, Lut1d<LUT_X>* lut) {
 
     std::cout << Coord<1>{{{{x}}}} << std::endl;
 
-    for (int32_t c = 0; c < C; ++c) {
+    for (int32_t c = 0; c < color.ssize(); ++c) {
       auto& channel = color.at(c);
 
       auto min = FindPossibleMinimum<int32_t, int32_t, 8>(

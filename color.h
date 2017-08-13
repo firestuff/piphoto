@@ -10,14 +10,22 @@
 constexpr int32_t kMinColor = 0;
 constexpr int32_t kMaxColor = UINT16_MAX;
 
+class ColorBase {};
+
 template <int32_t C>
-struct Color : public Array<int32_t, C> {
+struct Color : public Array<int32_t, C>, public ColorBase {
   constexpr int32_t AbsDiff(const Color<C>& other) const;
   constexpr Color<C> Interpolate(const Color<C>& other, int32_t mul, int32_t div) const;
   constexpr Color<C> Crop() const;
 };
 
-struct RgbColor : public Color<3> {};
+
+struct RgbColor : public Color<3> {
+ public:
+  RgbColor() = default;
+  RgbColor(const Color<3>& src);
+};
+
 
 template <int32_t C>
 constexpr int32_t Color<C>::AbsDiff(const Color<C>& other) const {

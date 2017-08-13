@@ -11,9 +11,10 @@ class LutBase {
   LutBase(const LutBase&) = default;
   virtual ~LutBase();
 
+  // TODO: Allow other color dimensions
   virtual Color<3> MapColor(const Color<3>& in) const = 0;
 
-  template <int32_t X, int32_t Y, int32_t C>
+  template <int32_t X, int32_t Y, class C>
   std::unique_ptr<Image<X, Y, C>> MapImage(const Image<X, Y, C>& in) const;
 
  protected:
@@ -21,7 +22,7 @@ class LutBase {
   static constexpr int32_t BlockSize(int32_t points);
 };
 
-template <int32_t X, int32_t Y, int32_t C>
+template <int32_t X, int32_t Y, class C>
 std::unique_ptr<Image<X, Y, C>> LutBase::MapImage(const Image<X, Y, C>& in) const {
   auto out = std::make_unique<Image<X, Y, C>>();
 
