@@ -74,20 +74,15 @@ int32_t ScoreLut(const Image<X, Y, RgbColor>& image, const LutBase& lut) {
   Array<int32_t, kColorCheckerSrgb.size()> diff;
   diff.fill(INT32_MAX);
 
-  for (int32_t y = 0; y < Y; ++y) {
-    const auto& row = image.at(y);
-
-    for (int32_t x = 0; x < X; ++x) {
-      const auto pixel = lut.MapColor(row.at(x));
-
-      for (int32_t cc = 0; cc < kColorCheckerSrgb.ssize(); ++cc) {
-        auto pixel_diff = pixel.AbsDiff(kColorCheckerSrgb.at(cc));
-        if (pixel_diff < diff.at(cc)) {
-          diff.at(cc) = pixel_diff;
-        }
+  image.ForEach([&diff, &lut](const RgbColor& color) {
+    const auto pixel = lut.MapColor(color);
+    for (int32_t cc = 0; cc < kColorCheckerSrgb.ssize(); ++cc) {
+      auto pixel_diff = pixel.AbsDiff(kColorCheckerSrgb.at(cc));
+      if (pixel_diff < diff.at(cc)) {
+        diff.at(cc) = pixel_diff;
       }
     }
-  }
+  });
 
   return std::accumulate(diff.begin(), diff.end(), 0);
 }

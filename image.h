@@ -9,10 +9,26 @@
 #include "color.h"
 #include "coord.h"
 
+class ImageBase {};
+
+
+template <class C>
+class ImageColorBase : public ImageBase {
+ public:
+  ImageColorBase() = default;
+  ImageColorBase(const ImageColorBase<C>&) = default;
+  virtual ~ImageColorBase() = default;
+
+  virtual void ForEach(std::function<void(const C&)> callback) const = 0;
+};
+
+
 template <int32_t X, int32_t Y, class C>
-class Image : public Array<Array<C, X>, Y> {
+class Image : public Array<Array<C, X>, Y>, ImageColorBase<C> {
  public:
   constexpr const C& GetPixel(const Coord<2>& coord) const;
+
+  void ForEach(std::function<void(const C&)> callback) const override;
 
   void SetPixel(const Coord<2>& coord, const C& color);
   void DrawXLine(const Coord<2>& start, const C& color, int32_t length);
@@ -26,6 +42,16 @@ class Image : public Array<Array<C, X>, Y> {
 template <int32_t X, int32_t Y, class C>
 constexpr const C& Image<X, Y, C>::GetPixel(const Coord<2>& coord) const {
   return this->at(coord.at(1)).at(coord.at(0));
+}
+
+template <int32_t X, int32_t Y, class C>
+void  Image<X, Y, C>::ForEach(std::function<void(const C&)> callback) const {
+  for (int32_t y = 0; y < Y; ++y) {
+    const auto& row = this->at(y);
+    for (int32_t x = 0; x < X; ++x) {
+      callback(row.at(x));
+    }
+  }
 }
 
 template <int32_t X, int32_t Y, class C>
