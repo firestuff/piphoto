@@ -105,7 +105,7 @@ std::unique_ptr<Image<X, Y, RgbColor>> HighlightClosest(const Image<X, Y, RgbCol
 }
 
 template <int32_t LUT_X, int32_t LUT_Y, int32_t LUT_Z, int32_t IMG_X, int32_t IMG_Y>
-int32_t OptimizeLut(const Image<IMG_X, IMG_Y, RgbColor>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
+int32_t OptimizeLut(const ImageColorBase<RgbColor>& image, Lut3d<LUT_X, LUT_Y, LUT_Z>* lut) {
   auto snapshot = *lut;
   int32_t diff = 0;
 
