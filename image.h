@@ -13,8 +13,7 @@ class ImageBase {};
 
 
 template <class C>
-class ImageColorBase : public ImageBase {
- public:
+struct ImageColorBase : public ImageBase {
   ImageColorBase() = default;
   ImageColorBase(const ImageColorBase<C>&) = default;
   virtual ~ImageColorBase() = default;

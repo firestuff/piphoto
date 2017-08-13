@@ -9,6 +9,7 @@
 
 constexpr int32_t kMinColor = 0;
 constexpr int32_t kMaxColor = UINT16_MAX;
+constexpr int32_t kNumColors = (kMaxColor - kMinColor) + 1;
 
 class ColorBase {};
 
@@ -20,10 +21,21 @@ struct Color : public Array<int32_t, C>, public ColorBase {
 };
 
 
+struct RgbColor;
+struct HsvColor;
+
+
 struct RgbColor : public Color<3> {
- public:
   RgbColor() = default;
   RgbColor(const Color<3>& src);
+
+  operator HsvColor() const;
+};
+
+
+struct HsvColor : public Color<3> {
+  HsvColor() = default;
+  HsvColor(const Color<3>& src);
 };
 
 
@@ -58,7 +70,7 @@ template <int32_t C>
 std::ostream& operator<<(std::ostream& os, const Color<C>& color) {
   os << std::hex << std::setfill('0') << "Color(";
   for (int32_t c = 0; c < C; ++c) {
-    os << "0x" << std::setw(4) << color.at(0);
+    os << "0x" << std::setw(4) << color.at(c);
     if (c < C - 1) {
       os << ", ";
     }
